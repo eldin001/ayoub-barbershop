@@ -390,7 +390,6 @@
   }
   .b2 .servizi a:active{background:rgba(201,163,90,.08)}
   .b2 .nome{font-size:clamp(1rem,4.2vw,1.2rem);font-weight:500;letter-spacing:.01em}
-  .b2 .durata{display:block;margin-top:.1rem;font-size:.78rem;letter-spacing:.06em;opacity:.55}
   /* puntini tra nome e prezzo, come su un menù */
   .b2 .punti{display:block;border-bottom:2px dotted rgba(230,225,214,.35);transform:translateY(-.35em);min-width:1rem}
   .b2 .prezzo{
@@ -410,7 +409,6 @@
     .recensioni{top:calc(env(safe-area-inset-top) + 5.25rem)}
     .b2 h2{font-size:2.4rem;margin-bottom:.5rem}
     .b2 .servizi a{padding:.4rem 0}
-    .b2 .durata{display:none}
     .b2 .riga-servizio{display:none}
   }
   /* Blocco 3: griglia dei tagli. Colonna flessibile: testata, griglia che prende lo spazio che resta, bottone */
@@ -704,12 +702,12 @@
     <fieldset>
       <legend><small>1</small>Servizio</legend>
       <div class="chips" id="chips-servizio">
-        <label class="chip"><input type="radio" name="servizio" value="Taglio" data-durata="30"><span>Taglio <b>15 €</b></span></label>
-        <label class="chip"><input type="radio" name="servizio" value="Taglio e barba" data-durata="45"><span>Taglio e barba <b>20 €</b></span></label>
-        <label class="chip"><input type="radio" name="servizio" value="Barba" data-durata="20"><span>Barba <b>10 €</b></span></label>
-        <label class="chip"><input type="radio" name="servizio" value="Rasatura con panno caldo" data-durata="25"><span>Rasatura <b>15 €</b></span></label>
-        <label class="chip"><input type="radio" name="servizio" value="Taglio bambino" data-durata="25"><span>Bambino <b>12 €</b></span></label>
-        <label class="chip"><input type="radio" name="servizio" value="Contorno e rifinitura" data-durata="15"><span>Contorno <b>8 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Taglio"><span>Taglio <b>15 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Taglio e barba"><span>Taglio e barba <b>20 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Barba"><span>Barba <b>10 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Rasatura con panno caldo"><span>Rasatura <b>15 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Taglio bambino"><span>Bambino <b>12 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Contorno e rifinitura"><span>Contorno <b>8 €</b></span></label>
       </div>
     </fieldset>
     <fieldset>
@@ -799,12 +797,12 @@
         <h2 class="anim">Listino</h2>
         <!-- Listino di esempio: prezzi e durate da sostituire con quelli di Ayoub. Il numero è quello della scheda Google. -->
         <ul class="servizi">
-          <li class="anim"><a data-servizio="Taglio" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20taglio."><span class="nome">Taglio<span class="durata">30 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">15 €</span></a></li>
-          <li class="anim"><a data-servizio="Taglio e barba" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20taglio%20e%20barba."><span class="nome">Taglio e barba<em class="tag">Il più richiesto</em><span class="durata">45 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">20 €</span></a></li>
-          <li class="anim"><a data-servizio="Barba" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20la%20barba."><span class="nome">Barba<span class="durata">20 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">10 €</span></a></li>
-          <li class="anim"><a data-servizio="Rasatura con panno caldo" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20una%20rasatura%20con%20panno%20caldo."><span class="nome">Rasatura con panno caldo<span class="durata">25 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">15 €</span></a></li>
-          <li class="anim"><a data-servizio="Taglio bambino" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20taglio%20bambino."><span class="nome">Bambino, fino a 12 anni<span class="durata">25 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">12 €</span></a></li>
-          <li class="anim"><a data-servizio="Contorno e rifinitura" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20contorno."><span class="nome">Contorno e rifinitura<span class="durata">15 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">8 €</span></a></li>
+          <li class="anim"><a data-servizio="Taglio" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20taglio."><span class="nome">Taglio</span><i class="punti" aria-hidden="true"></i><span class="prezzo">15 €</span></a></li>
+          <li class="anim"><a data-servizio="Taglio e barba" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20taglio%20e%20barba."><span class="nome">Taglio e barba<em class="tag">Il più richiesto</em></span><i class="punti" aria-hidden="true"></i><span class="prezzo">20 €</span></a></li>
+          <li class="anim"><a data-servizio="Barba" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20la%20barba."><span class="nome">Barba</span><i class="punti" aria-hidden="true"></i><span class="prezzo">10 €</span></a></li>
+          <li class="anim"><a data-servizio="Rasatura con panno caldo" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20una%20rasatura%20con%20panno%20caldo."><span class="nome">Rasatura con panno caldo</span><i class="punti" aria-hidden="true"></i><span class="prezzo">15 €</span></a></li>
+          <li class="anim"><a data-servizio="Taglio bambino" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20taglio%20bambino."><span class="nome">Bambino, fino a 12 anni</span><i class="punti" aria-hidden="true"></i><span class="prezzo">12 €</span></a></li>
+          <li class="anim"><a data-servizio="Contorno e rifinitura" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20contorno."><span class="nome">Contorno e rifinitura</span><i class="punti" aria-hidden="true"></i><span class="prezzo">8 €</span></a></li>
         </ul>
       </div>
       <p class="riga-servizio anim">Tocca un servizio per prenotare direttamente quel taglio.</p>
@@ -1037,7 +1035,7 @@
       var pronto=!!(sv&&giorno&&ora&&nome.length>=2&&!errore);
       invia.setAttribute('aria-disabled',pronto?'false':'true');
       if(pronto){
-        var msg='Ciao! Sono '+nome+', vorrei prenotare: '+sv.value+' ('+sv.dataset.durata+' min), '+testoGiorno+' alle '+ora+'.';
+        var msg='Ciao! Sono '+nome+', vorrei prenotare: '+sv.value+', '+testoGiorno+' alle '+ora+'.';
         invia.href='https://wa.me/'+NUMERO+'?text='+encodeURIComponent(msg);
       }else{invia.href='https://wa.me/'+NUMERO;}
     }
