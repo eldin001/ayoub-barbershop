@@ -27,12 +27,18 @@
 <meta name="geo.position" content="44.39397;7.81680">
 <meta name="ICBM" content="44.39397, 7.81680">
 <!-- Font ospitato qui (licenza OFL in fonts/OFL.txt): nessuna richiesta a server terzi -->
-<link rel="preload" href="fonts/bebas-neue.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/bebas-neue-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="img/banconi.webp" as="image" fetchpriority="high">
 <style>
   @font-face{
     font-family:"Bebas Neue";font-style:normal;font-weight:400;font-display:swap;
-    src:url(fonts/bebas-neue.woff2) format("woff2");
+    src:url(fonts/bebas-neue-latin-ext.woff2) format("woff2");
+    unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family:"Bebas Neue";font-style:normal;font-weight:400;font-display:swap;
+    src:url(fonts/bebas-neue-latin.woff2) format("woff2");
+    unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
   }
   :root{
     --nero:#15181f;
@@ -872,7 +878,7 @@
     <img class="foto" src="img/banconi.webp" alt="Interno di Ayoub Barbershop: banconi in marmo nero, specchi con luce blu e insegna al neon" width="765" height="1020" fetchpriority="high">
     <div class="testo">
       <h1 class="titoli">
-        <span class="occhiello anim">Barbiere a Mondovì · Corso Italia 16</span>
+        <span class="occhiello anim">Barbiere a Mondovì</span>
         <span class="anim">Esci meglio</span>
         <span class="anim">di come entri.</span>
         <span class="anim">Anche di domenica.</span>
