@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.className+=" js";</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ayoub Barbershop</title>
+<meta name="theme-color" content="#15181f">
+<!-- Anteprima: togliere il noindex quando il sito va online sul dominio definitivo -->
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --nero:#15181f;
+    --antracite:#2a2b30;
+    --blu:#1414c8;
+    --azzurro:#a9c4ff;
+    --oro:#c9a35a;
+    --osso:#e6e1d6;
+    --display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
+    --gutter:clamp(1.25rem,5vw,2.5rem);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  /* l'attributo hidden vince sempre, anche sui pannelli con display:flex: altrimenti restano invisibili ma coprono la pagina */
+  [hidden]{display:none !important}
+  html,body{height:100%;background:var(--nero);color:var(--osso);
+    font-family:system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    -webkit-text-size-adjust:100%}
+  /* Contenitore che scorre: una sezione per volta, come un feed di reel */
+  .feed{
+    height:100vh;height:100dvh;
+    overflow-y:auto;
+    scroll-snap-type:y mandatory;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .feed::-webkit-scrollbar{display:none}
+  .blocco{
+    position:relative;
+    height:100vh;height:100dvh;
+    scroll-snap-align:start;
+    scroll-snap-stop:always;
+    display:grid;place-items:center;
+    /* colonna larga esattamente quanto il blocco: senza minmax(0,…) un contenuto largo (es. il carosello) allargherebbe la griglia oltre lo schermo */
+    grid-template-columns:minmax(0,1fr);
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overflow:hidden;
+  }
+  /* Intestazione fissa e trasparente sopra il feed */
+  .nav{
+    position:fixed;top:0;left:0;right:0;z-index:10;
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    padding:calc(env(safe-area-inset-top) + .9rem) var(--gutter) .9rem;
+    color:var(--osso);
+    /* velo scuro in alto che sfuma a trasparente, un po' più lungo della barra */
+    background:linear-gradient(to bottom,rgba(21,24,31,.75) 0%,rgba(21,24,31,.45) 55%,rgba(21,24,31,0) 100%);
+    padding-bottom:2.2rem;
+    pointer-events:none;
+    transition:color .35s ease,background .35s ease;
+  }
+  /* Sopra una sezione chiara la barra diventa scura e senza velo */
+  .nav[data-tono="chiaro"]{color:var(--nero);background:none}
+  @media (prefers-reduced-motion:reduce){.nav{transition:none}}
+  .nav > *{pointer-events:auto}
+  /* Logo su due righe: "Ayoub" grande e "Barbershop" piccolo, largo esattamente quanto la riga sopra */
+  .nav .logo{
+    display:inline-grid;grid-template-columns:max-content;
+    font-family:var(--display);
+    color:inherit;text-decoration:none;
+  }
+  .nav .nome{font-size:2rem;line-height:.85;letter-spacing:.08em;margin-right:-.08em}
+  .nav .sotto{
+    display:flex;justify-content:space-between;
+    margin-top:.15rem;
+    font-size:.6rem;line-height:1;letter-spacing:0;text-transform:uppercase;
+    opacity:.85;
+  }
+  .nav .sotto i{font-style:normal}
+  .nav .destra{display:flex;align-items:center;gap:1rem}
+  /* indicatore di pagina: numero corrente pieno, totale attenuato */
+  .nav .pagina{
+    display:flex;align-items:baseline;gap:.3rem;
+    font-family:var(--display);font-size:1.15rem;line-height:1;letter-spacing:.1em;
+    transition:opacity .25s;
+  }
+  .nav .pagina b{font-weight:400;min-width:1.4em}
+  .nav .pagina i{font-style:normal;opacity:.5}
+  .nav .pagina.cambia b{animation:salta .35s var(--ease-out)}
+  @keyframes salta{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.nav .pagina.cambia b{animation:none}}
+  .nav .menu{
+    width:44px;height:44px;margin-right:-8px;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    background:none;border:0;color:inherit;cursor:pointer;
+  }
+  .nav .menu span{
+    display:block;width:28px;height:2px;background:currentColor;border-radius:1px;
+    transition:transform .35s var(--ease-out),opacity .25s ease;
+  }
+  .nav .menu span + span{margin-top:7px}
+  /* da hamburger a X */
+  .nav .menu[aria-expanded="true"] span:nth-child(1){transform:translateY(9px) rotate(45deg)}
+  .nav .menu[aria-expanded="true"] span:nth-child(2){opacity:0;transform:scaleX(.2)}
+  .nav .menu[aria-expanded="true"] span:nth-child(3){transform:translateY(-9px) rotate(-45deg)}
+  /* con il menu aperto la barra è sempre chiara e senza velo */
+  html.menu-aperto .nav{color:var(--osso);background:none}
+
+  /* Menu a tutto schermo: si apre con un cerchio che parte dall'icona */
+  .overlay{
+    position:fixed;inset:0;z-index:9;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:calc(env(safe-area-inset-top) + 6rem) var(--gutter) calc(env(safe-area-inset-bottom) + 1.25rem + 54px + 1.25rem);
+    background:radial-gradient(70% 45% at 85% 5%,rgba(20,20,200,.45),transparent 65%),var(--nero);
+    color:var(--osso);
+    clip-path:circle(0px at calc(100% - var(--gutter) - 14px) calc(env(safe-area-inset-top) + 2.3rem));
+    transition:clip-path .55s var(--ease-out);
+    overscroll-behavior:contain;
+  }
+  .overlay.aperto{clip-path:circle(160% at calc(100% - var(--gutter) - 14px) calc(env(safe-area-inset-top) + 2.3rem));transition-duration:.75s}
+  .overlay ul{list-style:none;display:grid;gap:clamp(.4rem,2vw,.8rem)}
+  .overlay ul a{
+    display:flex;align-items:baseline;gap:.9rem;
+    font-family:var(--display);font-size:clamp(3rem,15vw,5.5rem);line-height:1;
+    text-transform:uppercase;letter-spacing:.01em;
+    color:inherit;text-decoration:none;
+    opacity:0;transform:translateY(22px);
+    transition:opacity .45s var(--ease-out),transform .6s var(--ease-out),color .3s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .overlay.aperto ul a{opacity:1;transform:none;transition-delay:calc(.18s + var(--i,0) * 70ms)}
+  .overlay ul a small{font-family:system-ui,sans-serif;font-size:.8rem;letter-spacing:.15em;color:var(--oro);opacity:.9}
+  .overlay ul a[aria-current="true"]{color:var(--oro)}
+  .overlay ul a:active{opacity:.7}
+  /* focus da tastiera: sottolineatura oro invece del riquadro di sistema */
+  .overlay ul a:focus-visible{outline:none;text-decoration:underline;text-decoration-color:var(--oro);text-decoration-thickness:3px;text-underline-offset:.1em}
+  .overlay .piede{margin-top:auto;font-size:.85rem;letter-spacing:.03em;opacity:.7}
+  /* stessa coppia di bottoni dei blocchi, nello stesso identico punto: si sovrappone senza scatti */
+  .overlay .bottoni{
+    position:absolute;left:var(--gutter);right:var(--gutter);
+    bottom:calc(env(safe-area-inset-bottom) + 1.25rem);margin-top:0;
+  }
+  .overlay .piede a{color:inherit}
+  @media (prefers-reduced-motion:reduce){
+    .overlay,.overlay.aperto{transition:none}
+    .overlay ul a{transition:none}
+    .nav .menu span{transition:none}
+  }
+
+
+  /* Numero segnaposto del blocco */
+  .blocco .numero{
+    position:relative;z-index:2;
+    font-size:clamp(6rem,40vw,14rem);
+    font-weight:800;line-height:1;letter-spacing:-.04em;
+    user-select:none;
+  }
+
+  /* Blocco 1: foto dei banconi a tutto schermo + velo scuro che sfuma verso il basso */
+  .b1{background:var(--nero);color:var(--osso);place-items:end stretch}
+  .b1 .foto{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:cover;object-position:76% 50%;
+    z-index:0;
+  }
+  .b1::after{
+    content:"";
+    position:absolute;inset:0;z-index:1;
+    background:linear-gradient(to bottom,
+      rgba(21,24,31,.18) 0%,
+      rgba(21,24,31,.25) 35%,
+      rgba(21,24,31,.6) 55%,
+      rgba(21,24,31,.88) 86%,
+      rgba(21,24,31,.95) 100%);
+    pointer-events:none;
+  }
+  /* Testo in basso, come nel riferimento */
+  .b1 .testo{
+    position:relative;z-index:2;
+    padding:0 var(--gutter) calc(env(safe-area-inset-bottom) + 1.25rem);
+  }
+  .b1 .occhiello{
+    font-size:clamp(.95rem,3.6vw,1.15rem);
+    font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;
+    /* pieno e con un'ombra morbida: sta sopra gli specchi, la zona più chiara della foto */
+    text-shadow:0 1px 2px rgba(21,24,31,.9),0 2px 14px rgba(21,24,31,.7);
+    margin-bottom:clamp(1rem,4vw,1.5rem);
+  }
+  .b1 .titoli{font-weight:400}
+  .b1 .titoli span{
+    display:block;
+    font-family:var(--display);
+    font-size:clamp(3rem,14.5vw,5.25rem);
+    line-height:.92;
+    text-transform:uppercase;
+    letter-spacing:.01em;
+    margin-top:clamp(.5rem,2.4vw,.9rem);
+    text-wrap:balance;
+  }
+  .b1 .titoli span:first-child{margin-top:0}
+  /* ---- Bottone unico per i blocchi 1, 2 e 3: stessa misura, stesso raggio, sempre in fondo al blocco ---- */
+  .bottone{
+    display:flex;align-items:center;justify-content:center;gap:.6rem;
+    width:100%;min-height:54px;padding:.9rem 1.25rem;
+    margin-top:clamp(1rem,4vw,1.4rem);
+    border-radius:16px;border:1.5px solid var(--oro);
+    font-size:1.05rem;font-weight:700;letter-spacing:.02em;
+    text-decoration:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .bottone svg{width:22px;height:22px;flex:none}
+  /* squircle vero dove il browser lo supporta (corner-shape), angoli molto arrotondati altrove */
+  @supports (corner-shape:squircle){
+    .bottone,.prenota .campo{corner-shape:squircle;border-radius:22px}
+  }
+  .bottone.pieno{background:var(--oro);color:var(--nero)}
+  .bottone.bordo{background:transparent;color:inherit}
+  .bottone:active{filter:brightness(.92)}
+  .bottone:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+  /* coppia di bottoni: "Chiama" compatto a sinistra, WhatsApp largo a destra, stessa altezza */
+  .bottoni{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.5rem;margin-top:clamp(1rem,4vw,1.4rem)}
+  .bottoni .bottone{margin-top:0;font-size:.95rem;padding:.8rem .5rem;gap:.45rem;white-space:nowrap}
+  .bottone.chiama{width:auto;padding:0 .6rem;gap:.35rem;background:transparent;color:inherit}
+  .bottone.chiama svg{width:22px;height:22px}
+  @media (max-width:340px){.bottone.chiama{padding:0;width:54px;font-size:0;gap:0}}
+  /* ---- Pannello prenotazione: sale dal basso, compone il messaggio WhatsApp ---- */
+  .prenota{
+    position:fixed;inset:0;z-index:11;
+    display:flex;flex-direction:column;
+    background:var(--nero);color:var(--osso);
+    transform:translateY(100%);
+    transition:transform .5s var(--ease-out);
+    overscroll-behavior:contain;
+  }
+  .prenota.aperto{transform:none}
+  .prenota-testa{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:calc(env(safe-area-inset-top) + .9rem) var(--gutter) .6rem;
+    border-bottom:1px solid rgba(230,225,214,.12);
+  }
+  .prenota-testa h2{font-family:var(--display);font-weight:400;font-size:2.2rem;line-height:1;text-transform:uppercase;letter-spacing:.02em}
+  .prenota .chiudi{
+    width:44px;height:44px;margin-right:-8px;position:relative;
+    background:none;border:0;color:inherit;cursor:pointer;
+  }
+  .prenota .chiudi span{position:absolute;left:8px;top:21px;width:28px;height:2px;background:currentColor;border-radius:1px}
+  .prenota .chiudi span:first-child{transform:rotate(45deg)}
+  .prenota .chiudi span:last-child{transform:rotate(-45deg)}
+  .prenota-corpo{flex:1;min-height:0;overflow-y:auto;padding:.5rem var(--gutter) 1rem;-webkit-overflow-scrolling:touch}
+  .prenota fieldset{border:0;padding:0;margin:1rem 0 0}
+  .prenota legend{
+    display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;
+    font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;opacity:.85;
+  }
+  .prenota legend small{
+    display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+    border:1px solid var(--oro);color:var(--oro);font-size:.72rem;font-weight:700;
+  }
+  .prenota legend em{font-style:normal;text-transform:none;letter-spacing:.02em;opacity:.6;margin-left:.2rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem}
+  .chip{position:relative}
+  .chip input{position:absolute;opacity:0;width:1px;height:1px}
+  .chip span{
+    display:inline-flex;align-items:baseline;gap:.4rem;
+    min-height:42px;padding:.5rem .9rem;
+    border:1.5px solid rgba(230,225,214,.3);border-radius:999px;
+    font-size:.95rem;font-weight:500;line-height:1.2;
+    -webkit-tap-highlight-color:transparent;
+    transition:border-color .2s,background .2s,color .2s;
+  }
+  .chip span b{font-family:var(--display);font-weight:400;font-size:1.05rem;color:var(--oro)}
+  .chip input:checked + span{border-color:var(--oro);background:rgba(201,163,90,.16);color:var(--oro)}
+  .chip input:focus-visible + span{outline:3px solid var(--osso);outline-offset:2px}
+  .prenota .campo{
+    width:100%;min-height:46px;padding:.6rem .9rem;
+    background:rgba(255,255,255,.05);border:1.5px solid rgba(230,225,214,.3);border-radius:14px;
+    color:inherit;font:inherit;font-size:1rem;
+  }
+  .prenota .campo:focus{outline:none;border-color:var(--oro)}
+  .prenota .data-ora{display:grid;grid-template-columns:1.4fr 1fr;gap:.6rem}
+  .prenota .campo-etichetta span{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-bottom:.3rem}
+  .prenota input[type="date"],.prenota input[type="time"]{
+    -webkit-appearance:none;appearance:none;color-scheme:dark;
+    min-height:46px;
+  }
+  .prenota input[type="date"]::-webkit-date-and-time-value,.prenota input[type="time"]::-webkit-date-and-time-value{text-align:left;min-height:1.2em}
+  .prenota .aiuto{margin-top:.5rem;font-size:.78rem;letter-spacing:.03em;opacity:.55}
+  .prenota .avviso{margin-top:.5rem;font-size:.85rem;color:#e8a598}
+  .prenota-piede{
+    padding:.75rem var(--gutter) calc(env(safe-area-inset-bottom) + 1rem);
+    border-top:1px solid rgba(230,225,214,.12);
+    background:var(--nero);
+  }
+  .prenota .riepilogo{font-size:.85rem;letter-spacing:.02em;opacity:.75;min-height:1.2em;margin-bottom:.6rem}
+  .prenota .bottone{margin-top:0}
+  .prenota .bottone[aria-disabled="true"]{opacity:.4;pointer-events:none}
+  @media (prefers-reduced-motion:reduce){.prenota{transition:none}}
+  /* riga di servizio sopra il bottone (orari nel blocco 1, nota nel blocco 2) */
+  .riga-servizio{font-size:.85rem;letter-spacing:.04em;opacity:.75;margin-top:.9rem}
+
+  /* Blocchi con contenuto: il numero diventa un badge sotto la barra */
+  .pieno .numero{
+    position:absolute;top:calc(env(safe-area-inset-top) + 5rem);right:var(--gutter);
+    font-size:1rem;font-weight:600;letter-spacing:.1em;
+    padding:.35rem .6rem;border:1px solid rgba(230,225,214,.5);border-radius:999px;
+    opacity:.8;
+  }
+
+  /* Blocco 2: recensioni + listino, centrati nello spazio sotto la barra */
+  .b2{background:var(--nero);color:var(--osso);place-items:stretch}
+  .b2 .contenuto{
+    position:relative;z-index:2;
+    height:100%;display:flex;flex-direction:column;
+    /* sopra: barra + nastro recensioni; il listino si centra nello spazio che resta, il bottone sta in fondo */
+    padding:calc(env(safe-area-inset-top) + 10rem) var(--gutter) calc(env(safe-area-inset-bottom) + 1.25rem);
+  }
+  .b2 .listino{margin:auto 0}
+
+  /* Nastro recensioni Google: una riga di testo che scorre in continuo, senza card né indicatori */
+  .recensioni{
+    position:absolute;left:0;right:0;z-index:2;
+    top:calc(env(safe-area-inset-top) + 5.75rem);
+    padding:0 var(--gutter);
+  }
+  .recensioni .testata{
+    display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+    margin-bottom:.6rem;
+  }
+  /* titolo del mini blocco: stesso font dei titoli di sezione, in piccolo */
+  .recensioni .titolo-mini{
+    font-family:var(--display);font-weight:400;
+    font-size:clamp(1.35rem,6vw,1.7rem);line-height:1;
+    text-transform:uppercase;letter-spacing:.04em;
+  }
+  .recensioni .testata a{
+    font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85;
+    color:inherit;text-decoration:none;border-bottom:1px solid rgba(230,225,214,.35);
+    white-space:nowrap;
+  }
+  .recensioni .stella{color:var(--oro);font-size:1.05em}
+  .recensioni .nastro{
+    overflow:hidden;
+    margin:0 calc(var(--gutter) * -1);
+    -webkit-mask-image:linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);
+    mask-image:linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);
+  }
+  .recensioni .scia{display:flex;width:max-content;animation:scorri 45s linear infinite}
+  .recensioni .gruppo{display:flex;gap:3rem;padding-right:3rem;white-space:nowrap}
+  .recensioni .voce{font-size:clamp(.95rem,3.9vw,1.05rem);line-height:1.4}
+  .recensioni .stelle{color:var(--oro);letter-spacing:.12em;margin-right:.5rem}
+  .recensioni .autore{opacity:.55;margin-left:.5rem}
+  @keyframes scorri{to{transform:translateX(-50%)}}
+  @media (prefers-reduced-motion:reduce){
+    .recensioni .scia{animation:none}
+    .recensioni .nastro{overflow-x:auto;scrollbar-width:none;-webkit-mask-image:none;mask-image:none;padding:0 var(--gutter)}
+  }
+
+  /* Listino */
+  .b2 .occhiello{
+    font-size:clamp(.85rem,3.2vw,1rem);
+    letter-spacing:.12em;text-transform:uppercase;opacity:.7;
+    margin-bottom:.4rem;
+  }
+  .b2 h2{
+    font-family:var(--display);font-weight:400;
+    font-size:clamp(2.6rem,12vw,4rem);line-height:.9;
+    text-transform:uppercase;letter-spacing:.01em;
+    margin-bottom:clamp(.75rem,3vw,1.25rem);
+  }
+  /* Foto di sfondo scurita: dà atmosfera senza disturbare la lettura */
+  .b2 .sfondo{
+    position:absolute;inset:0;z-index:0;
+    width:100%;height:100%;object-fit:cover;object-position:72% 18%;
+    opacity:.22;filter:saturate(.7);
+  }
+  .b2::after{
+    content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(21,24,31,.2),rgba(21,24,31,.75) 45%,rgba(21,24,31,.92));
+  }
+  .b2 .servizi{list-style:none}
+  .b2 .servizi a{
+    display:grid;grid-template-columns:auto 1fr auto;align-items:baseline;column-gap:.6rem;
+    padding:clamp(.55rem,2.2vw,.8rem) 0;
+    color:inherit;text-decoration:none;
+    -webkit-tap-highlight-color:rgba(201,163,90,.25);
+  }
+  .b2 .servizi a:active{background:rgba(201,163,90,.08)}
+  .b2 .nome{font-size:clamp(1rem,4.2vw,1.2rem);font-weight:500;letter-spacing:.01em}
+  .b2 .durata{display:block;margin-top:.1rem;font-size:.78rem;letter-spacing:.06em;opacity:.55}
+  /* puntini tra nome e prezzo, come su un menù */
+  .b2 .punti{display:block;border-bottom:2px dotted rgba(230,225,214,.35);transform:translateY(-.35em);min-width:1rem}
+  .b2 .prezzo{
+    font-family:var(--display);font-size:clamp(1.6rem,7vw,2.2rem);line-height:1;
+    color:var(--oro);white-space:nowrap;
+  }
+  .b2 .tag{
+    display:inline-block;vertical-align:middle;margin-left:.5rem;
+    padding:.12rem .45rem;border:1px solid var(--oro);border-radius:999px;
+    font-style:normal;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--oro);
+  }
+
+
+  /* Telefoni bassi (es. iPhone SE): listino un po' più compatto per restare in una schermata */
+  @media (max-height:700px){
+    .b2 .contenuto{padding-top:calc(env(safe-area-inset-top) + 9.25rem)}
+    .recensioni{top:calc(env(safe-area-inset-top) + 5.25rem)}
+    .b2 h2{font-size:2.4rem;margin-bottom:.5rem}
+    .b2 .servizi a{padding:.4rem 0}
+    .b2 .durata{display:none}
+    .b2 .riga-servizio{display:none}
+  }
+  /* Blocco 3: griglia dei tagli. Colonna flessibile: testata, griglia che prende lo spazio che resta, bottone */
+  .b3{background:var(--osso);color:var(--nero);place-items:stretch}
+  .b3 .contenuto{
+    position:relative;z-index:2;
+    height:100%;display:flex;flex-direction:column;
+    padding:calc(env(safe-area-inset-top) + 4.75rem) var(--gutter) calc(env(safe-area-inset-bottom) + 1.25rem);
+  }
+  .b3 .occhiello{
+    font-size:clamp(.85rem,3.2vw,1rem);
+    letter-spacing:.12em;text-transform:uppercase;opacity:.7;
+    margin-bottom:.4rem;
+  }
+  .b3 h2{
+    font-family:var(--display);font-weight:400;
+    font-size:clamp(2.6rem,12vw,4rem);line-height:.9;
+    text-transform:uppercase;letter-spacing:.01em;
+    margin-bottom:clamp(.75rem,3vw,1.25rem);
+  }
+  .b3 .griglia{
+    flex:1;min-height:0;
+    display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:4px;
+    list-style:none;
+  }
+  .b3 .griglia li{position:relative;overflow:hidden;background:#d6cfbf;border-radius:14px}
+  .b3 .griglia .tile{
+    position:absolute;inset:0;width:100%;height:100%;
+    padding:0;border:0;background:none;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .b3 .griglia .tile:active img{transform:scale(1.03)}
+  .b3 .griglia .tile:focus-visible{outline:3px solid var(--nero);outline-offset:-3px}
+  .b3 .griglia img{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;display:block;transition:transform .25s var(--ease-out);
+  }
+
+  /* Galleria a tutto schermo: una foto per volta, scorrimento a scatti */
+  .galleria{
+    position:fixed;inset:0;z-index:12;
+    display:flex;flex-direction:column;
+    background:var(--nero);color:var(--osso);
+    opacity:0;transition:opacity .3s ease;
+    overscroll-behavior:contain;
+  }
+  .galleria.aperto{opacity:1}
+  .gal-testa{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:calc(env(safe-area-inset-top) + .9rem) var(--gutter) .6rem;
+  }
+  .gal-conta{display:flex;align-items:baseline;gap:.3rem;font-family:var(--display);font-size:1.4rem;line-height:1;letter-spacing:.1em}
+  .gal-conta b{font-weight:400}
+  .gal-conta i{font-style:normal;opacity:.5}
+  .galleria .chiudi{width:44px;height:44px;margin-right:-8px;position:relative;background:none;border:0;color:inherit;cursor:pointer}
+  .galleria .chiudi span{position:absolute;left:8px;top:21px;width:28px;height:2px;background:currentColor;border-radius:1px}
+  .galleria .chiudi span:first-child{transform:rotate(45deg)}
+  .galleria .chiudi span:last-child{transform:rotate(-45deg)}
+  /* stesso gesto del sito: scorrimento verticale a scatti, una foto per volta */
+  .gal-pista{
+    flex:1;min-height:0;display:flex;flex-direction:column;
+    overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+  }
+  .gal-pista::-webkit-scrollbar{display:none}
+  .gal-slide{
+    flex:0 0 100%;min-height:0;scroll-snap-align:start;scroll-snap-stop:always;
+    margin:0;display:grid;place-items:center;
+    padding:.5rem var(--gutter) calc(env(safe-area-inset-bottom) + 1.5rem);
+  }
+  .gal-slide img{
+    display:block;max-width:100%;max-height:100%;width:auto;height:auto;
+    object-fit:contain;border-radius:14px;
+  }
+  @supports (corner-shape:squircle){
+    .b3 .griglia li,.gal-slide img{corner-shape:squircle;border-radius:20px}
+  }
+  @media (prefers-reduced-motion:reduce){.galleria{transition:none}.b3 .griglia img{transition:none}}
+
+  @media (max-height:700px){
+    .b3 .contenuto{padding-top:calc(env(safe-area-inset-top) + 4.25rem)}
+    .b3 h2{font-size:2.4rem;margin-bottom:.5rem}
+  }
+  /* Blocco 4: dove e quando, su blu elettrico; il footer con i dati legali resta ancorato in fondo */
+  .b4{background:var(--blu);color:var(--osso);place-items:stretch}
+  .b4 .contenuto{
+    position:relative;z-index:2;
+    height:100%;display:flex;flex-direction:column;
+    padding:calc(env(safe-area-inset-top) + 4.75rem) var(--gutter) calc(env(safe-area-inset-bottom) + 1.25rem);
+  }
+  .b4 .occhiello{
+    font-size:clamp(.85rem,3.2vw,1rem);
+    letter-spacing:.12em;text-transform:uppercase;opacity:.75;
+    margin-bottom:.4rem;
+  }
+  .b4 h2{
+    font-family:var(--display);font-weight:400;
+    font-size:clamp(2.6rem,12vw,4rem);line-height:.9;
+    text-transform:uppercase;letter-spacing:.01em;
+    margin-bottom:clamp(1rem,4vw,1.5rem);
+  }
+  .b4 .mappa{
+    display:block;position:relative;overflow:hidden;border-radius:8px;
+    height:clamp(110px,22vh,200px);
+    border:1px solid rgba(230,225,214,.25);
+  }
+  .b4 .mappa img{width:100%;height:100%;object-fit:cover;display:block}
+  .b4 .mappa small{
+    position:absolute;right:.4rem;bottom:.3rem;
+    font-size:.6rem;color:var(--nero);opacity:.75;background:rgba(230,225,214,.7);padding:.05rem .3rem;border-radius:3px;
+  }
+  /* le informazioni stanno in basso, vicine ai bottoni e al footer */
+  .b4 .info{list-style:none;display:grid;gap:clamp(.8rem,3vw,1.1rem);margin-top:auto;padding-top:clamp(.9rem,3vw,1.25rem)}
+  .b4 .info li{display:grid;grid-template-columns:auto 1fr;column-gap:.9rem;align-items:start}
+  .b4 .info svg{width:22px;height:22px;margin-top:.15rem;color:var(--oro)}
+  .b4 .info strong{display:block;font-size:1.05rem;font-weight:600}
+  .b4 .info span{display:block;font-size:.95rem;opacity:.85;line-height:1.4}
+  .b4 .info a{color:inherit}
+  .b4 .orari-tab{display:grid;grid-template-columns:auto 1fr;column-gap:1rem;row-gap:.15rem;font-size:.95rem}
+  .b4 .orari-tab em{font-style:normal;color:var(--oro);font-weight:600}
+  /* Contatti: tre icone tonde, discrete, allineate a destra nella zona del pollice */
+  .b4 .azioni{display:flex;justify-content:flex-end;gap:.75rem;margin-top:clamp(.9rem,3.5vw,1.25rem)}
+  .b4 .azioni a{
+    width:46px;height:46px;border-radius:50%;
+    display:grid;place-items:center;
+    border:1.5px solid rgba(230,225,214,.4);
+    color:inherit;text-decoration:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .b4 .azioni a:active{filter:brightness(.9)}
+  .b4 .azioni svg{width:22px;height:22px}
+  .b4 .azioni .testo-nascosto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  /* Colori ufficiali dei marchi: verde WhatsApp e sfumatura Instagram; il telefono resta neutro */
+  .b4 .azioni .whatsapp{background:#25d366;border-color:#25d366;color:#fff}
+  .b4 .azioni .instagram{
+    background:linear-gradient(45deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+    border-color:transparent;color:#fff;
+  }
+  .b4 .footer{
+    margin-top:auto;padding-top:1rem;
+    border-top:1px solid rgba(230,225,214,.25);
+    font-size:.72rem;line-height:1.5;letter-spacing:.02em;opacity:.8;
+  }
+  .b4 .footer p{margin:0}
+  .b4 .footer a{color:inherit}
+  @media (max-height:700px){
+    .b4 .contenuto{padding-top:calc(env(safe-area-inset-top) + 4.25rem)}
+    .b4 h2{font-size:2.4rem;margin-bottom:.6rem}
+    .b4 .mappa{height:clamp(100px,18vh,150px)}
+    .b4 .info{gap:.6rem}
+    .b4 .footer{font-size:.68rem}
+  }
+
+  /* ---- Segnale di scorrimento: impronta di dito bianca che scorre verso l'alto e svanisce ---- */
+  .scorri-cue{
+    position:fixed;right:var(--gutter);top:50%;z-index:5;
+    width:26px;height:96px;margin-top:-48px;
+    opacity:0;transition:opacity .6s ease;pointer-events:none;
+  }
+  html.js .scorri-cue.attivo{opacity:1}
+  .scorri-cue span{
+    position:absolute;left:0;bottom:0;width:26px;height:26px;border-radius:50%;
+    background:rgba(255,255,255,.22);
+    border:2px solid rgba(255,255,255,.85);
+    box-shadow:0 0 0 6px rgba(255,255,255,.08),0 2px 10px rgba(0,0,0,.25);
+    animation:swipe 1.8s cubic-bezier(.25,.7,.3,1) infinite;
+  }
+  /* la scia lasciata dal dito, che si dissolve verso il basso */
+  .scorri-cue span::before{
+    content:"";position:absolute;left:6px;top:14px;width:10px;height:44px;border-radius:6px;
+    background:linear-gradient(to bottom,rgba(255,255,255,.35),rgba(255,255,255,0));
+    z-index:-1;
+  }
+  @keyframes swipe{
+    0%{transform:translateY(0) scale(.85);opacity:0}
+    15%{transform:translateY(-4px) scale(1);opacity:1}
+    70%{opacity:1}
+    100%{transform:translateY(-66px) scale(.9);opacity:0}
+  }
+  .scorri-cue.via{opacity:0 !important}
+  @media (prefers-reduced-motion:reduce){.scorri-cue span{animation:none;bottom:35px}}
+
+  /* ---- Torna all'inizio: cerchio oro in basso a destra, solo nelle pagine 3 e 4 ---- */
+  .torna-su{
+    position:fixed;right:var(--gutter);bottom:calc(env(safe-area-inset-bottom) + 1.25rem);z-index:5;
+    width:54px;height:54px;border-radius:50%;border:0;
+    background:var(--oro);color:var(--nero);
+    display:grid;place-items:center;cursor:pointer;
+    box-shadow:0 6px 18px rgba(21,24,31,.35);
+    opacity:0;transform:translateY(14px) scale(.9);pointer-events:none;
+    transition:opacity .35s var(--ease-out),transform .45s var(--ease-out);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .torna-su.visibile{opacity:1;transform:none;pointer-events:auto}
+  .torna-su:active{filter:brightness(.92)}
+  .torna-su:focus-visible{outline:3px solid var(--nero);outline-offset:3px}
+  /* i blocchi 3 e 4 lasciano libera la colonna del bottone */
+  .b3 .contenuto .bottone{width:calc(100% - 54px - .6rem);font-size:.95rem;padding:.8rem .5rem;gap:.45rem;white-space:nowrap}
+  .b4 .footer{padding-right:calc(54px + .6rem)}
+  @media (prefers-reduced-motion:reduce){.torna-su{transition:none}}
+
+  /* ---- Animazioni di entrata ----
+     Gli elementi .anim partono invisibili e appaiono in sequenza quando il blocco è a schermo (.in-vista).
+     Senza JavaScript (manca html.js) tutto è visibile da subito. */
+  :root{--ease-out:cubic-bezier(.16,1,.3,1)}
+  html.js .anim{opacity:0;transform:translateY(16px)}
+  html.js .in-vista .anim{
+    opacity:1;transform:none;
+    transition:opacity .7s var(--ease-out),transform .8s var(--ease-out);
+    transition-delay:calc(var(--base,80ms) + var(--i,0) * 70ms);
+  }
+  html.js .b1 .anim{--base:350ms}
+  /* Foto della copertina: dissolvenza con zoom lento verso il riposo */
+  html.js .b1 .foto{opacity:0;transform:scale(1.08)}
+  html.js .b1.in-vista .foto{
+    opacity:1;transform:scale(1);
+    transition:opacity 1s ease,transform 1.8s var(--ease-out);
+  }
+  /* Le foto della griglia entrano con un leggero ingrandimento */
+  html.js .b3 .griglia li.anim{transform:scale(.96)}
+  html.js .b3.in-vista .griglia li.anim{transform:none}
+  /* Barra: scende dolcemente all'apertura */
+  @keyframes scendi{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+  html.js .nav{animation:scendi .9s var(--ease-out) .2s both}
+  @media (prefers-reduced-motion:reduce){
+    html.js .anim,html.js .b1 .foto,html.js .b3 .griglia li.anim{opacity:1;transform:none;transition:none}
+    html.js .nav{animation:none}
+  }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HairSalon",
+  "name": "Ayoub Barbershop",
+  "legalName": "Barbershop Ayoub di Elouardy Ayoub",
+  "vatID": "IT04157940042",
+  "telephone": "+39 392 847 4875",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Corso Italia 16/C",
+    "addressLocality": "Mondovì",
+    "addressRegion": "CN",
+    "postalCode": "12084",
+    "addressCountry": "IT"
+  },
+  "openingHoursSpecification": [
+    {"@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"], "opens": "09:00", "closes": "19:30"}
+  ],
+  "priceRange": "€"
+}
+</script>
+</head>
+<body>
+<header class="nav" data-tono="scuro">
+  <a class="logo" href="#copertina" data-blocco="copertina" aria-label="Ayoub Barbershop, torna all'inizio">
+    <span class="nome" aria-hidden="true">Ayoub</span>
+    <span class="sotto" aria-hidden="true"><i>B</i><i>a</i><i>r</i><i>b</i><i>e</i><i>r</i><i>s</i><i>h</i><i>o</i><i>p</i></span>
+  </a>
+  <div class="destra">
+    <span class="pagina" aria-live="polite" aria-label="Pagina 1 di 4"><b>01</b><i>/ 04</i></span>
+    <button class="menu" type="button" aria-label="Apri il menu" aria-expanded="false" aria-controls="menu-principale">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+<nav class="overlay" id="menu-principale" aria-label="Menu principale" hidden>
+  <ul>
+    <li><a href="#copertina" data-blocco="copertina"><small>01</small>Inizio</a></li>
+    <li><a href="#listino" data-blocco="listino"><small>02</small>Listino</a></li>
+    <li><a href="#tagli" data-blocco="tagli"><small>03</small>I tagli</a></li>
+    <li><a href="#dove" data-blocco="dove"><small>04</small>Dove siamo</a></li>
+  </ul>
+  <p class="piede">Corso Italia 16, Mondovì</p>
+  <div class="bottoni">
+    <a class="bottone chiama" href="tel:+393928474875">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8z"/></svg>
+      Chiama
+    </a>
+    <a class="bottone pieno" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare.">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      Prenota su WhatsApp
+    </a>
+  </div>
+</nav>
+<section class="prenota" id="prenota" role="dialog" aria-modal="true" aria-labelledby="prenota-titolo" hidden>
+  <header class="prenota-testa">
+    <h2 id="prenota-titolo">Prenota</h2>
+    <button class="chiudi" type="button" aria-label="Chiudi"><span></span><span></span></button>
+  </header>
+  <form class="prenota-corpo" id="prenota-form" novalidate>
+    <fieldset>
+      <legend><small>1</small>Servizio</legend>
+      <div class="chips" id="chips-servizio">
+        <label class="chip"><input type="radio" name="servizio" value="Taglio" data-durata="30"><span>Taglio <b>15 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Taglio e barba" data-durata="45"><span>Taglio e barba <b>20 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Barba" data-durata="20"><span>Barba <b>10 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Rasatura con panno caldo" data-durata="25"><span>Rasatura <b>15 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Taglio bambino" data-durata="25"><span>Bambino <b>12 €</b></span></label>
+        <label class="chip"><input type="radio" name="servizio" value="Contorno e rifinitura" data-durata="15"><span>Contorno <b>8 €</b></span></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend><small>2</small>Giorno e ora</legend>
+      <div class="data-ora">
+        <label class="campo-etichetta"><span>Giorno</span><input class="campo" type="date" name="giorno" id="prenota-giorno" required></label>
+        <label class="campo-etichetta"><span>Ora</span><input class="campo" type="time" name="ora" id="prenota-ora" min="09:00" max="19:30" step="900" required></label>
+      </div>
+      <p class="aiuto">Martedì–domenica, 9:00–19:30. Lunedì chiuso.</p>
+      <p class="avviso" id="prenota-avviso" role="alert" hidden></p>
+    </fieldset>
+    <fieldset>
+      <legend><small>3</small>Nome</legend>
+      <input class="campo" type="text" name="nome" id="prenota-nome" autocomplete="given-name" placeholder="Come ti chiami?" maxlength="40" required>
+    </fieldset>
+  </form>
+  <footer class="prenota-piede">
+    <p class="riepilogo" id="prenota-riepilogo" aria-live="polite">Scegli servizio, giorno, ora e scrivi il tuo nome.</p>
+    <a class="bottone pieno" id="prenota-invia" href="https://wa.me/393928474875" aria-disabled="true">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      Invia su WhatsApp
+    </a>
+  </footer>
+</section>
+<section class="galleria" id="galleria" role="dialog" aria-modal="true" aria-label="Galleria dei tagli" hidden>
+  <header class="gal-testa">
+    <p class="gal-conta" aria-live="polite"><b>01</b><i>/ 06</i></p>
+    <button class="chiudi" type="button" aria-label="Chiudi la galleria"><span></span><span></span></button>
+  </header>
+  <div class="gal-pista" tabindex="0">
+    <figure class="gal-slide"><img src="img/taglio-1.webp" alt="Fade con disegno a rasoio sul lato" width="765" height="1020" loading="lazy" decoding="async"></figure>
+    <figure class="gal-slide"><img src="img/segnaposto-2.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></figure>
+    <figure class="gal-slide"><img src="img/segnaposto-3.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></figure>
+    <figure class="gal-slide"><img src="img/segnaposto-4.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></figure>
+    <figure class="gal-slide"><img src="img/segnaposto-5.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></figure>
+    <figure class="gal-slide"><img src="img/segnaposto-6.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></figure>
+  </div>
+</section>
+<main class="feed">
+  <section class="blocco b1 pieno" id="copertina" data-tono="scuro" aria-label="Copertina">
+    <img class="foto" src="img/banconi.webp" alt="Interno di Ayoub Barbershop: banconi in marmo nero, specchi con luce blu e insegna al neon" width="765" height="1020" fetchpriority="high">
+    <div class="testo">
+      <p class="occhiello anim">Corso Italia 16 · Mondovì</p>
+      <h1 class="titoli">
+        <span class="anim">Esci meglio</span>
+        <span class="anim">di come entri.</span>
+        <span class="anim">Anche di domenica.</span>
+      </h1>
+      <p class="riga-servizio anim">Martedì–domenica 9:00–19:30, orario continuato</p>
+      <div class="bottoni anim">
+        <a class="bottone chiama" href="tel:+393928474875">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8z"/></svg>
+          Chiama
+        </a>
+        <a class="bottone pieno" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare.">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          Prenota su WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+  <section class="blocco b2 pieno" id="listino" data-tono="scuro" aria-label="Recensioni e listino">
+    <img class="sfondo" src="img/taglio-1.webp" alt="" width="765" height="1020" loading="lazy" decoding="async">
+    <div class="recensioni anim" aria-label="Recensioni Google">
+      <div class="testata">
+        <h2 class="titolo-mini">Recensioni Google</h2>
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=ayoub+the+barber+shop+Corso+Italia+16+Mondov%C3%AC" target="_blank" rel="noopener">5,0 <span class="stella" aria-hidden="true">★</span> · 4 recensioni</a>
+      </div>
+      <div class="nastro">
+        <div class="scia">
+        <div class="gruppo">
+          <span class="voce"><span class="stelle" aria-label="5 stelle">★★★★★</span>Il più bravo a Mondovì, bellissimo locale, curato e pulito, super professionale, gentile e disponibile<span class="autore">Francesco D.</span></span>
+          <span class="voce"><span class="stelle" aria-label="5 stelle">★★★★★</span>Super professionali, taglio perfetto. Lo consiglio, numeri uno 👍<span class="autore">Sergej N.</span></span>
+          <span class="voce"><span class="stelle" aria-label="5 stelle">★★★★★</span>Senza dubbio il numero uno a Mondovì ♥️<span class="autore">Yousef E.</span></span>
+        </div>
+        <div class="gruppo" aria-hidden="true">
+          <span class="voce"><span class="stelle" aria-label="5 stelle">★★★★★</span>Il più bravo a Mondovì, bellissimo locale, curato e pulito, super professionale, gentile e disponibile<span class="autore">Francesco D.</span></span>
+          <span class="voce"><span class="stelle" aria-label="5 stelle">★★★★★</span>Super professionali, taglio perfetto. Lo consiglio, numeri uno 👍<span class="autore">Sergej N.</span></span>
+          <span class="voce"><span class="stelle" aria-label="5 stelle">★★★★★</span>Senza dubbio il numero uno a Mondovì ♥️<span class="autore">Yousef E.</span></span>
+        </div>
+        </div>
+      </div>
+    </div>
+    <div class="contenuto">
+      <div class="listino">
+        <p class="occhiello anim">Servizi e prezzi</p>
+        <h2 class="anim">Listino</h2>
+        <!-- Listino di esempio: prezzi e durate da sostituire con quelli di Ayoub. Il numero è quello della scheda Google. -->
+        <ul class="servizi">
+          <li class="anim"><a data-servizio="Taglio" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20taglio."><span class="nome">Taglio<span class="durata">30 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">15 €</span></a></li>
+          <li class="anim"><a data-servizio="Taglio e barba" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20taglio%20e%20barba."><span class="nome">Taglio e barba<em class="tag">Il più richiesto</em><span class="durata">45 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">20 €</span></a></li>
+          <li class="anim"><a data-servizio="Barba" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20la%20barba."><span class="nome">Barba<span class="durata">20 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">10 €</span></a></li>
+          <li class="anim"><a data-servizio="Rasatura con panno caldo" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20una%20rasatura%20con%20panno%20caldo."><span class="nome">Rasatura con panno caldo<span class="durata">25 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">15 €</span></a></li>
+          <li class="anim"><a data-servizio="Taglio bambino" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20taglio%20bambino."><span class="nome">Bambino, fino a 12 anni<span class="durata">25 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">12 €</span></a></li>
+          <li class="anim"><a data-servizio="Contorno e rifinitura" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare%20un%20contorno."><span class="nome">Contorno e rifinitura<span class="durata">15 min</span></span><i class="punti" aria-hidden="true"></i><span class="prezzo">8 €</span></a></li>
+        </ul>
+      </div>
+      <p class="riga-servizio anim">Tocca un servizio per prenotare direttamente quel taglio.</p>
+      <div class="bottoni anim">
+        <a class="bottone chiama" href="tel:+393928474875">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8z"/></svg>
+          Chiama
+        </a>
+        <a class="bottone pieno" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare.">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          Prenota su WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+  <section class="blocco b3" id="tagli" data-tono="chiaro" aria-label="I tagli">
+    <div class="contenuto">
+      <p class="occhiello anim">I tagli</p>
+      <h2 class="anim">Fatti da noi</h2>
+      <!-- Foto segnaposto: la prima è del negozio, le altre cinque vengono da loremflickr e vanno sostituite con le foto di Ayoub -->
+      <ul class="griglia">
+        <li class="anim"><button class="tile" type="button" aria-label="Apri la foto 1 di 6"><img src="img/taglio-1.webp" alt="Fade con disegno a rasoio sul lato" width="765" height="1020" loading="lazy" decoding="async"></button></li>
+        <li class="anim"><button class="tile" type="button" aria-label="Apri la foto 2 di 6"><img src="img/segnaposto-2.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></button></li>
+        <li class="anim"><button class="tile" type="button" aria-label="Apri la foto 3 di 6"><img src="img/segnaposto-3.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></button></li>
+        <li class="anim"><button class="tile" type="button" aria-label="Apri la foto 4 di 6"><img src="img/segnaposto-4.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></button></li>
+        <li class="anim"><button class="tile" type="button" aria-label="Apri la foto 5 di 6"><img src="img/segnaposto-5.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></button></li>
+        <li class="anim"><button class="tile" type="button" aria-label="Apri la foto 6 di 6"><img src="img/segnaposto-6.jpg" alt="Taglio uomo, foto segnaposto" width="600" height="750" loading="lazy" decoding="async"></button></li>
+      </ul>
+      <!-- Handle Instagram da chiedere ad Ayoub -->
+      <a class="bottone bordo anim" href="https://www.instagram.com/" target="_blank" rel="noopener">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        Vedi tutti su Instagram
+      </a>
+    </div>
+  </section>
+  <section class="blocco b4" id="dove" data-tono="scuro" aria-label="Dove e quando">
+    <div class="contenuto">
+      <p class="occhiello anim">Dove e quando</p>
+      <h2 class="anim">Ci trovi qui</h2>
+      <a class="mappa anim" href="https://www.google.com/maps/dir/?api=1&amp;destination=Corso+Italia+16%2C+12084+Mondov%C3%AC+CN" target="_blank" rel="noopener" aria-label="Mappa: Corso Italia 16, Mondovì. Apri le indicazioni su Google Maps">
+        <img src="img/mappa.jpg" alt="" width="720" height="420" loading="lazy" decoding="async">
+        <small>© OpenStreetMap</small>
+      </a>
+      <ul class="info">
+        <li class="anim">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+          <div><strong>Corso Italia 16, Mondovì</strong><span>12084 Mondovì (CN) · <a href="https://www.google.com/maps/dir/?api=1&amp;destination=Corso+Italia+16%2C+12084+Mondov%C3%AC+CN" target="_blank" rel="noopener">Indicazioni</a></span></div>
+        </li>
+        <li class="anim">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+          <div>
+            <strong>Orari</strong>
+            <div class="orari-tab">
+              <span>Lunedì</span><span>Chiuso</span>
+              <span>Martedì – Sabato</span><span>9:00 – 19:30, continuato</span>
+              <span>Domenica</span><span><em>Aperto</em> 9:00 – 19:30</span>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <div class="azioni">
+        <a class="anim" href="tel:+393928474875">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8z"/></svg>
+          <span class="testo-nascosto">Chiama</span>
+        </a>
+        <a class="anim whatsapp" href="https://wa.me/393928474875?text=Ciao%2C%20vorrei%20prenotare.">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          <span class="testo-nascosto">Scrivi su WhatsApp</span>
+        </a>
+        <!-- Handle Instagram da chiedere ad Ayoub -->
+        <a class="anim instagram" href="https://www.instagram.com/" target="_blank" rel="noopener">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+          <span class="testo-nascosto">Instagram</span>
+        </a>
+      </div>
+      <footer class="footer anim">
+        <p>Barbershop Ayoub di Elouardy Ayoub<br>P.IVA 04157940042<br>Corso Italia 16/C, 12084 Mondovì (CN)</p>
+        <p>© 2026 Ayoub Barbershop · <a href="privacy.html">Privacy</a></p>
+      </footer>
+    </div>
+  </section>
+</main>
+<div class="scorri-cue" aria-hidden="true"><span></span></div>
+<button class="torna-su" type="button" aria-label="Torna all'inizio" tabindex="-1">
+  <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M6 14l6-6 6 6"/></svg>
+</button>
+<script>
+  // La barra prende il tono (scuro/chiaro) della sezione che occupa almeno metà schermo.
+  (function(){
+    var nav=document.querySelector('.nav');
+    var feed=document.querySelector('.feed');
+    if(!nav||!feed||!('IntersectionObserver' in window))return;
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){nav.dataset.tono=e.target.dataset.tono||'scuro';}
+      });
+    },{root:feed,threshold:.5});
+    feed.querySelectorAll('.blocco').forEach(function(b){io.observe(b);});
+  })();
+
+  // Entrate: numera gli elementi .anim di ogni blocco e segna il blocco quando è a schermo.
+  (function(){
+    var feed=document.querySelector('.feed');
+    var blocchi=[].slice.call(document.querySelectorAll('.blocco'));
+    blocchi.forEach(function(b){
+      [].slice.call(b.querySelectorAll('.anim')).forEach(function(el,k){el.style.setProperty('--i',k);});
+    });
+    if(!('IntersectionObserver' in window)){blocchi.forEach(function(b){b.classList.add('in-vista');});return;}
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){e.target.classList.toggle('in-vista',e.isIntersecting);});
+    },{root:feed,threshold:.35});
+    blocchi.forEach(function(b){io.observe(b);});
+  })();
+  // Menu a tutto schermo: apre/chiude, evidenzia il blocco corrente, porta al blocco scelto.
+  (function(){
+    var btn=document.querySelector('.nav .menu');
+    var ov=document.getElementById('menu-principale');
+    var feed=document.querySelector('.feed');
+    if(!btn||!ov||!feed)return;
+    var voci=[].slice.call(ov.querySelectorAll('a[data-blocco]'));
+    voci.forEach(function(a,i){a.style.setProperty('--i',i);});
+    var timer=null;
+    function aperto(){return ov.classList.contains('aperto');}
+    function apri(){
+      clearTimeout(timer);ov.hidden=false;
+      requestAnimationFrame(function(){requestAnimationFrame(function(){ov.classList.add('aperto');});});
+      btn.setAttribute('aria-expanded','true');btn.setAttribute('aria-label','Chiudi il menu');
+      document.documentElement.classList.add('menu-aperto');
+      feed.inert=true;
+      setTimeout(function(){var c=ov.querySelector('a[aria-current="true"]')||voci[0];if(c)c.focus({preventScroll:true});},400);
+    }
+    function chiudi(){
+      ov.classList.remove('aperto');
+      btn.setAttribute('aria-expanded','false');btn.setAttribute('aria-label','Apri il menu');
+      document.documentElement.classList.remove('menu-aperto');
+      feed.inert=false;
+      timer=setTimeout(function(){if(!aperto())ov.hidden=true;},600);
+    }
+    function vaiA(id){
+      var t=document.getElementById(id);
+      if(t)t.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+    }
+    btn.addEventListener('click',function(){aperto()?chiudi():apri();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&aperto()){chiudi();btn.focus();}});
+    voci.forEach(function(a){
+      a.addEventListener('click',function(e){e.preventDefault();chiudi();setTimeout(function(){vaiA(a.dataset.blocco);},120);});
+    });
+    var logo=document.querySelector('.nav .logo');
+    if(logo)logo.addEventListener('click',function(e){e.preventDefault();if(aperto())chiudi();vaiA('copertina');});
+    // voce corrente = blocco che occupa almeno metà schermo
+    var blocchi=[].slice.call(feed.querySelectorAll('.blocco'));
+    var pagina=document.querySelector('.nav .pagina');
+    var tornaSu=document.querySelector('.torna-su');
+    if(tornaSu){
+      tornaSu.addEventListener('click',function(){vaiA('copertina');});
+    }
+    function segnaPagina(i){
+      if(tornaSu){
+        var mostra=i>=2;
+        tornaSu.classList.toggle('visibile',mostra);
+        tornaSu.tabIndex=mostra?0:-1;
+      }
+      if(!pagina)return;
+      var n=('0'+(i+1)).slice(-2);
+      var b=pagina.querySelector('b');
+      if(b.textContent===n)return;
+      b.textContent=n;
+      pagina.setAttribute('aria-label','Pagina '+(i+1)+' di '+blocchi.length);
+      pagina.classList.remove('cambia');void pagina.offsetWidth;pagina.classList.add('cambia');
+    }
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(!e.isIntersecting)return;
+          voci.forEach(function(a){a.setAttribute('aria-current',a.dataset.blocco===e.target.id?'true':'false');});
+          segnaPagina(blocchi.indexOf(e.target));
+        });
+      },{root:feed,threshold:.5});
+      blocchi.forEach(function(b){io.observe(b);});
+    }
+  })();
+  // Funnel di prenotazione: compone il messaggio e apre WhatsApp. Senza JavaScript i link aprono la chat direttamente.
+  (function(){
+    var pan=document.getElementById('prenota');
+    var form=document.getElementById('prenota-form');
+    var invia=document.getElementById('prenota-invia');
+    var riep=document.getElementById('prenota-riepilogo');
+    var avviso=document.getElementById('prenota-avviso');
+    var feed=document.querySelector('.feed');
+    var nav=document.querySelector('.nav');
+    if(!pan||!form||!invia||!feed)return;
+    var NUMERO='393928474875';
+    var GIORNI=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+    var MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+    var APRE=9*60, CHIUDE=19*60+30;
+    var timer=null, ultimoFocus=null;
+
+    function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+    function limitiData(){
+      var oggi=new Date(); var max=new Date(oggi.getFullYear(),oggi.getMonth(),oggi.getDate()+60);
+      form.giorno.min=iso(oggi); form.giorno.max=iso(max);
+    }
+    function minuti(hhmm){var p=hhmm.split(':');return parseInt(p[0],10)*60+parseInt(p[1],10);}
+    function aggiorna(){
+      var sv=form.querySelector('input[name="servizio"]:checked');
+      var giorno=form.giorno.value, ora=form.ora.value;
+      var nome=(form.nome.value||'').trim();
+      var errore='';
+      var d=null;
+      if(giorno){
+        var p=giorno.split('-'); d=new Date(+p[0],+p[1]-1,+p[2]);
+        var oggi=new Date(); oggi.setHours(0,0,0,0);
+        if(d.getDay()===1)errore='Il lunedì siamo chiusi: scegli un altro giorno.';
+        else if(d<oggi)errore='Scegli un giorno da oggi in poi.';
+      }
+      if(!errore&&ora){
+        var m=minuti(ora);
+        if(m<APRE||m>CHIUDE)errore='Siamo aperti dalle 9:00 alle 19:30.';
+        else if(d&&iso(d)===iso(new Date())){
+          var adesso=new Date(); if(m<adesso.getHours()*60+adesso.getMinutes()+30)errore='Per oggi serve almeno mezz\'ora di anticipo: scegli un orario più tardi o un altro giorno.';
+        }
+      }
+      avviso.textContent=errore; avviso.hidden=!errore;
+      var testoGiorno=d?GIORNI[d.getDay()]+' '+d.getDate()+' '+MESI[d.getMonth()]:'';
+      var parti=[];
+      if(sv)parti.push(sv.value);
+      if(testoGiorno)parti.push(testoGiorno);
+      if(ora)parti.push('ore '+ora);
+      riep.textContent=parti.length?parti.join(' · '):'Scegli servizio, giorno, ora e scrivi il tuo nome.';
+      var pronto=!!(sv&&giorno&&ora&&nome.length>=2&&!errore);
+      invia.setAttribute('aria-disabled',pronto?'false':'true');
+      if(pronto){
+        var msg='Ciao! Sono '+nome+', vorrei prenotare: '+sv.value+' ('+sv.dataset.durata+' min), '+testoGiorno+' alle '+ora+'.';
+        invia.href='https://wa.me/'+NUMERO+'?text='+encodeURIComponent(msg);
+      }else{invia.href='https://wa.me/'+NUMERO;}
+    }
+    function apri(servizio){
+      ultimoFocus=document.activeElement;
+      clearTimeout(timer);
+      form.reset(); limitiData();
+      if(servizio){
+        var r=form.querySelector('input[name="servizio"][value="'+servizio+'"]');
+        if(r)r.checked=true;
+      }
+      aggiorna();
+      pan.hidden=false;
+      requestAnimationFrame(function(){requestAnimationFrame(function(){pan.classList.add('aperto');});});
+      feed.inert=true;if(nav)nav.inert=true;
+      setTimeout(function(){pan.querySelector('.chiudi').focus({preventScroll:true});},450);
+    }
+    function chiudi(){
+      pan.classList.remove('aperto');
+      feed.inert=false;if(nav)nav.inert=false;
+      timer=setTimeout(function(){if(!pan.classList.contains('aperto'))pan.hidden=true;},550);
+      if(ultimoFocus&&ultimoFocus.focus)ultimoFocus.focus({preventScroll:true});
+    }
+    form.addEventListener('change',aggiorna);
+    form.addEventListener('input',aggiorna);
+    form.addEventListener('submit',function(e){e.preventDefault();if(invia.getAttribute('aria-disabled')!=='true')invia.click();});
+    pan.querySelector('.chiudi').addEventListener('click',chiudi);
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&pan.classList.contains('aperto'))chiudi();});
+    // i bottoni "Prenota su WhatsApp" aprono il pannello; le righe del listino lo aprono con il servizio già scelto
+    document.querySelectorAll('.bottone.pieno').forEach(function(a){
+      if(a.id==='prenota-invia')return;
+      a.addEventListener('click',function(e){
+        e.preventDefault();
+        var menu=document.getElementById('menu-principale');
+        if(menu&&menu.classList.contains('aperto')){var b=document.querySelector('.nav .menu');if(b)b.click();}
+        apri(null);
+      });
+    });
+    document.querySelectorAll('.servizi a[data-servizio]').forEach(function(a){
+      a.addEventListener('click',function(e){e.preventDefault();apri(a.dataset.servizio);});
+    });
+  })();
+  // Assaggio di scorrimento: al primo arrivo il feed sale di poco e torna giù, così si capisce che si scorre.
+  (function(){
+    var feed=document.querySelector('.feed');
+    var cue=document.querySelector('.scorri-cue');
+    if(!feed)return;
+    var riduci=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var visto=false;try{visto=localStorage.getItem('ayoub-scorri')==='1';}catch(e){}
+    var interagito=false,inPeek=false;
+    function segna(){interagito=true;if(cue)cue.classList.add('via');}
+    ['touchstart','wheel','keydown','pointerdown'].forEach(function(ev){window.addEventListener(ev,segna,{passive:true,once:true});});
+    feed.addEventListener('scroll',function(){if(!inPeek)segna();},{passive:true});
+    function peek(){
+      if(interagito||feed.scrollTop>0||riduci||document.hidden)return;
+      inPeek=true;
+      var prec=feed.style.scrollSnapType;feed.style.scrollSnapType='none';
+      var t0=performance.now(),SU=480,GIU=620,H=72;
+      function fuori(t){return 1-Math.pow(1-t,3);}
+      function dentroFuori(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+      function passo(ora){
+        var t=ora-t0;
+        if(t<SU){feed.scrollTop=H*fuori(t/SU);}
+        else if(t<SU+GIU){feed.scrollTop=H*(1-dentroFuori((t-SU)/GIU));}
+        else{
+          feed.scrollTop=0;feed.style.scrollSnapType=prec;inPeek=false;
+          try{localStorage.setItem('ayoub-scorri','1');}catch(e){}
+          return;
+        }
+        requestAnimationFrame(passo);
+      }
+      requestAnimationFrame(passo);
+    }
+    if(cue){
+      setTimeout(function(){if(!interagito&&feed.scrollTop===0)cue.classList.add('attivo');},1800);
+      setTimeout(function(){cue.classList.add('via');},12000);
+    }
+    if(!visto)setTimeout(peek,2800);
+  })();
+  // Galleria dei tagli: tocca una foto, scorri con il dito, chiudi con la X o Escape.
+  (function(){
+    var gal=document.getElementById('galleria');
+    if(!gal)return;
+    var pista=gal.querySelector('.gal-pista');
+    var slide=[].slice.call(pista.children);
+    var conta=gal.querySelector('.gal-conta b');
+    var chiudiBtn=gal.querySelector('.chiudi');
+    var feed=document.querySelector('.feed');
+    var nav=document.querySelector('.nav');
+    var tiles=[].slice.call(document.querySelectorAll('.b3 .griglia .tile'));
+    var timer=null,ultimo=null,corrente=0;
+    function segna(i){
+      corrente=Math.max(0,Math.min(slide.length-1,i));
+      conta.textContent=('0'+(corrente+1)).slice(-2);
+      gal.setAttribute('aria-label','Galleria dei tagli, foto '+(corrente+1)+' di '+slide.length);
+    }
+    function apri(i){
+      ultimo=tiles[i]||document.activeElement;clearTimeout(timer);
+      gal.hidden=false;
+      pista.scrollTo({top:i*pista.clientHeight,behavior:'auto'});
+      segna(i);
+      requestAnimationFrame(function(){requestAnimationFrame(function(){gal.classList.add('aperto');});});
+      feed.inert=true;if(nav)nav.inert=true;
+      setTimeout(function(){chiudiBtn.focus({preventScroll:true});},320);
+    }
+    function chiudi(){
+      gal.classList.remove('aperto');
+      feed.inert=false;if(nav)nav.inert=false;
+      timer=setTimeout(function(){if(!gal.classList.contains('aperto'))gal.hidden=true;},320);
+      if(ultimo&&ultimo.focus)ultimo.focus({preventScroll:true});
+    }
+    var attesa=null;
+    pista.addEventListener('scroll',function(){
+      if(attesa)return;
+      attesa=requestAnimationFrame(function(){attesa=null;segna(Math.round(pista.scrollTop/pista.clientHeight));});
+    },{passive:true});
+    tiles.forEach(function(t,i){t.addEventListener('click',function(){apri(i);});});
+    chiudiBtn.addEventListener('click',chiudi);
+    document.addEventListener('keydown',function(e){
+      if(gal.hidden)return;
+      if(e.key==='Escape')chiudi();
+      else if(e.key==='ArrowDown'||e.key==='ArrowRight')pista.scrollBy({top:pista.clientHeight,behavior:'smooth'});
+      else if(e.key==='ArrowUp'||e.key==='ArrowLeft')pista.scrollBy({top:-pista.clientHeight,behavior:'smooth'});
+    });
+    window.addEventListener('resize',function(){if(!gal.hidden)pista.scrollTo({top:corrente*pista.clientHeight,behavior:'auto'});});
+  })();
+</script>
+</body>
+</html>
