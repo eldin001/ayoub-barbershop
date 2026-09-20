@@ -1,0 +1,25 @@
+# Ayoub Barbershop. Da servire alla radice del dominio definitivo.
+User-agent: *
+Allow: /
+
+# Assistenti e motori AI: benvenuti
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://eldin001.github.io/ayoub-barbershop/sitemap.xml

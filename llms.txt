@@ -1,0 +1,32 @@
+# Ayoub Barbershop
+
+> Barbiere a Mondovì (Cuneo, Piemonte), Corso Italia 16. Taglio uomo, barba, fade e rasatura con panno caldo. Aperto da martedì a domenica dalle 9:00 alle 19:30 con orario continuato, lunedì chiuso. Si prenota su WhatsApp al +39 392 847 4875.
+
+## Dati del negozio
+
+- Nome: Ayoub Barbershop (su Google Maps: "ayoub the barber shop")
+- Ragione sociale: Barbershop Ayoub di Elouardy Ayoub, impresa individuale, P.IVA 04157940042
+- Indirizzo: Corso Italia 16/C, 12084 Mondovì (CN), Italia
+- Coordinate: 44.39397, 7.81680
+- Telefono e WhatsApp: +39 392 847 4875
+- Orari: martedì–domenica 9:00–19:30, orario continuato; lunedì chiuso
+- Google Maps: https://www.google.com/maps/search/?api=1&query=ayoub+the+barber+shop+Corso+Italia+16+Mondov%C3%AC
+- Recensioni Google: 5,0 su 5 (settembre 2026)
+
+## Servizi
+
+- Taglio uomo
+- Taglio e barba
+- Barba
+- Rasatura con panno caldo
+- Taglio bambino
+- Contorno e rifinitura
+
+## Come prenotare
+
+Scrivere su WhatsApp al +39 392 847 4875 indicando servizio, giorno e ora, oppure usare il pulsante "Prenota su WhatsApp" sul sito, che prepara il messaggio.
+
+## Pagine
+
+- [Home](https://eldin001.github.io/ayoub-barbershop/)
+- [Privacy](https://eldin001.github.io/ayoub-barbershop/privacy.html)
